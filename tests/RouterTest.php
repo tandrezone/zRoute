@@ -320,4 +320,14 @@ class RouterTest extends TestCase
         $this->expectExceptionMessage('Route names must be globally unique');
         $anotherRouter->get($name, '/second', static fn($p) => 'second');
     }
+
+    public function testAnyRouteGeneratedNamesMustAlsoBeUnique(): void
+    {
+        $baseName = $this->routeName('ping');
+        $this->router->get($baseName . '.get', '/existing', static fn($p) => 'existing');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Route names must be globally unique');
+        $this->router->any($baseName, '/ping', static fn($p) => 'pong');
+    }
 }

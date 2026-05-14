@@ -93,8 +93,8 @@ class Router
         }
         if (isset(self::$namedHandlers[$name])) {
             throw new \InvalidArgumentException(
-                'Route name already exists: ' . $name
-                . '. Route names must be globally unique across all Router instances. Please choose a different name.',
+                'Route names must be globally unique across all Router instances. '
+                . 'Duplicate name: ' . $name . '. Please choose a different name.',
             );
         }
 
