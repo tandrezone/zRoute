@@ -141,10 +141,7 @@ class Router
     // -----------------------------------------------------------------------
 
     /**
-     * Dispatch a request and return whatever the matched handler returns.
-     *
-     * @param string $method HTTP method (GET, POST, …)
-     * @param string $path   URL path (query string is stripped automatically)
+     * Dispatch a route handler statically by route name.
      */
     public static function dispatch(string $name, array $params = []): mixed
     {
