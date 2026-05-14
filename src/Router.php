@@ -71,6 +71,7 @@ class Router
 
     /**
      * Register the same handler for all common HTTP methods.
+     * Names are generated as "{$name}.get", "{$name}.post", etc.
      */
     public function any(string $name, string $pattern, callable $handler): static
     {

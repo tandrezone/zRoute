@@ -98,6 +98,8 @@ $router
 
 Route names must be non-empty and globally unique so they can be dispatched
 statically via `Router::dispatch()`.
+For `any('ping', ...)`, generated names are `ping.get`, `ping.post`, `ping.put`,
+`ping.patch`, and `ping.delete`.
 
 ### Error handlers
 
