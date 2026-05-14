@@ -92,7 +92,10 @@ class Router
             throw new \InvalidArgumentException('Route name cannot be empty.');
         }
         if (isset(self::$namedHandlers[$name])) {
-            throw new \InvalidArgumentException('Route name already exists (names are globally unique): ' . $name);
+            throw new \InvalidArgumentException(
+                'Route name already exists: ' . $name
+                . '. Route names must be globally unique across all Router instances. Please choose a different name.',
+            );
         }
 
         $route = new Route(strtoupper($method), $name, $pattern, $handler);

@@ -309,4 +309,15 @@ class RouterTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->router->get('  ', '/about', static fn($p) => 'about');
     }
+
+    public function testRouteNameMustBeGloballyUnique(): void
+    {
+        $name = $this->routeName('duplicate');
+        $this->router->get($name, '/first', static fn($p) => 'first');
+
+        $anotherRouter = new Router();
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Route names must be globally unique');
+        $anotherRouter->get($name, '/second', static fn($p) => 'second');
+    }
 }
