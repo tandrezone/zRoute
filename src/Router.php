@@ -11,9 +11,9 @@ namespace zRoute;
  *
  *   $router = new Router();
  *
- *   $router->get('/', fn($p) => 'Home');
- *   $router->get('/products/$product-slug', fn($p) => 'Product: '.$p['product-slug']);
- *   $router->post('/users', fn($p) => 'Create user');
+ *   $router->get('home', '/', fn($p) => 'Home');
+ *   $router->get('products.show', '/products/$product-slug', fn($p) => 'Product: '.$p['product-slug']);
+ *   $router->post('users.create', '/users', fn($p) => 'Create user');
  *
  *   $router->notFound(fn($path) => '404');
  *   $router->methodNotAllowed(fn($method, $path) => '405');
@@ -21,13 +21,16 @@ namespace zRoute;
  *   // In a web context:
  *   $router->run();
  *
- *   // Or dispatch manually (useful in tests / CLI):
- *   $router->dispatch('GET', '/products/my-widget');
+ *   // Or dispatch by route name statically:
+ *   Router::dispatch('products.show', ['product-slug' => 'my-widget']);
  */
 class Router
 {
     /** @var Route[] */
     private array $routes = [];
+
+    /** @var array<string, callable> */
+    private static array $namedHandlers = [];
 
     private mixed $notFoundHandler = null;
 
@@ -37,38 +40,38 @@ class Router
     // Route registration helpers
     // -----------------------------------------------------------------------
 
-    public function get(string $pattern, callable $handler): static
+    public function get(string $name, string $pattern, callable $handler): static
     {
-        return $this->addRoute('GET', $pattern, $handler);
+        return $this->addRoute('GET', $name, $pattern, $handler);
     }
 
-    public function post(string $pattern, callable $handler): static
+    public function post(string $name, string $pattern, callable $handler): static
     {
-        return $this->addRoute('POST', $pattern, $handler);
+        return $this->addRoute('POST', $name, $pattern, $handler);
     }
 
-    public function put(string $pattern, callable $handler): static
+    public function put(string $name, string $pattern, callable $handler): static
     {
-        return $this->addRoute('PUT', $pattern, $handler);
+        return $this->addRoute('PUT', $name, $pattern, $handler);
     }
 
-    public function patch(string $pattern, callable $handler): static
+    public function patch(string $name, string $pattern, callable $handler): static
     {
-        return $this->addRoute('PATCH', $pattern, $handler);
+        return $this->addRoute('PATCH', $name, $pattern, $handler);
     }
 
-    public function delete(string $pattern, callable $handler): static
+    public function delete(string $name, string $pattern, callable $handler): static
     {
-        return $this->addRoute('DELETE', $pattern, $handler);
+        return $this->addRoute('DELETE', $name, $pattern, $handler);
     }
 
     /**
      * Register the same handler for all common HTTP methods.
      */
-    public function any(string $pattern, callable $handler): static
+    public function any(string $name, string $pattern, callable $handler): static
     {
         foreach (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
-            $this->addRoute($method, $pattern, $handler);
+            $this->addRoute($method, $name . '.' . strtolower($method), $pattern, $handler);
         }
 
         return $this;
@@ -77,9 +80,19 @@ class Router
     /**
      * Register a route for an arbitrary HTTP method.
      */
-    public function addRoute(string $method, string $pattern, callable $handler): static
+    public function addRoute(string $method, string $name, string $pattern, callable $handler): static
     {
-        $this->routes[] = new Route(strtoupper($method), $pattern, $handler);
+        $name = trim($name);
+        if ($name === '') {
+            throw new \InvalidArgumentException('Route name cannot be empty.');
+        }
+        if (isset(self::$namedHandlers[$name])) {
+            throw new \InvalidArgumentException('Route name already exists: ' . $name);
+        }
+
+        $route = new Route(strtoupper($method), $name, $pattern, $handler);
+        $this->routes[] = $route;
+        self::$namedHandlers[$name] = $route->getHandler();
 
         return $this;
     }
@@ -133,7 +146,22 @@ class Router
      * @param string $method HTTP method (GET, POST, …)
      * @param string $path   URL path (query string is stripped automatically)
      */
-    public function dispatch(string $method, string $path): mixed
+    public static function dispatch(string $name, array $params = []): mixed
+    {
+        if (!isset(self::$namedHandlers[$name])) {
+            return null;
+        }
+
+        return (self::$namedHandlers[$name])($params);
+    }
+
+    /**
+     * Dispatch a request by HTTP method/path and return matched handler result.
+     *
+     * @param string $method HTTP method (GET, POST, …)
+     * @param string $path   URL path (query string is stripped automatically)
+     */
+    public function dispatchRequest(string $method, string $path): mixed
     {
         $method = strtoupper($method);
         $path   = $this->normalizePath($path);
@@ -173,7 +201,7 @@ class Router
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
 
-        return $this->dispatch($method, $uri);
+        return $this->dispatchRequest($method, $uri);
     }
 
     // -----------------------------------------------------------------------

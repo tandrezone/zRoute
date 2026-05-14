@@ -27,15 +27,15 @@ $router = new Router();
 // Static routes
 // -------------------------------------------------------------------------
 
-$router->get('/', function (array $params): void {
+$router->get('home', '/', function (array $params): void {
     echo "Welcome to zRoute!\n";
 });
 
-$router->get('/about', function (array $params): void {
+$router->get('about', '/about', function (array $params): void {
     echo "About page\n";
 });
 
-$router->get('/contact', function (array $params): void {
+$router->get('contact', '/contact', function (array $params): void {
     echo "Contact page\n";
 });
 
@@ -44,20 +44,20 @@ $router->get('/contact', function (array $params): void {
 // -------------------------------------------------------------------------
 
 // Single dynamic segment – parameter name may contain hyphens
-$router->get('/products/$product-slug', function (array $params): void {
+$router->get('products.show', '/products/$product-slug', function (array $params): void {
     // Always sanitise output in real applications!
     $slug = htmlspecialchars($params['product-slug'], ENT_QUOTES, 'UTF-8');
     echo "Product: {$slug}\n";
 });
 
 // Single numeric-style segment
-$router->get('/users/$id', function (array $params): void {
+$router->get('users.show', '/users/$id', function (array $params): void {
     $id = htmlspecialchars($params['id'], ENT_QUOTES, 'UTF-8');
     echo "User ID: {$id}\n";
 });
 
 // Multiple dynamic segments
-$router->get('/users/$userId/posts/$postId', function (array $params): void {
+$router->get('users.posts.show', '/users/$userId/posts/$postId', function (array $params): void {
     $userId = htmlspecialchars($params['userId'], ENT_QUOTES, 'UTF-8');
     $postId = htmlspecialchars($params['postId'], ENT_QUOTES, 'UTF-8');
     echo "User {$userId} › Post {$postId}\n";
@@ -67,16 +67,16 @@ $router->get('/users/$userId/posts/$postId', function (array $params): void {
 // Different HTTP methods
 // -------------------------------------------------------------------------
 
-$router->post('/users', function (array $params): void {
+$router->post('users.create', '/users', function (array $params): void {
     echo "Create a new user\n";
 });
 
-$router->put('/users/$id', function (array $params): void {
+$router->put('users.update', '/users/$id', function (array $params): void {
     $id = htmlspecialchars($params['id'], ENT_QUOTES, 'UTF-8');
     echo "Update user {$id}\n";
 });
 
-$router->delete('/users/$id', function (array $params): void {
+$router->delete('users.delete', '/users/$id', function (array $params): void {
     $id = htmlspecialchars($params['id'], ENT_QUOTES, 'UTF-8');
     echo "Delete user {$id}\n";
 });

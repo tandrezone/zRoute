@@ -17,6 +17,8 @@ namespace zRoute;
  */
 class Route
 {
+    private string $name;
+
     /** @var string[] */
     private array $paramNames = [];
 
@@ -26,15 +28,18 @@ class Route
 
     /**
      * @param string   $method  HTTP method (will be uppercased automatically)
+     * @param string   $name    Unique route name
      * @param string   $pattern URL pattern with optional $param placeholders
      * @param callable $handler Handler called with an array of matched params
      */
     public function __construct(
         string $method,
+        string $name,
         private readonly string $pattern,
         private readonly mixed $handler,
     ) {
         $this->method = strtoupper($method);
+        $this->name   = trim($name);
         $this->parsePattern();
     }
 
@@ -45,6 +50,11 @@ class Route
     public function getMethod(): string
     {
         return $this->method;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     public function getPattern(): string
