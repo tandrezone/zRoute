@@ -96,6 +96,9 @@ $router
     ->post('users.create', '/users', fn($p) => 'create user');
 ```
 
+Route names must be non-empty and globally unique so they can be dispatched
+statically via `Router::dispatch()`.
+
 ### Error handlers
 
 ```php

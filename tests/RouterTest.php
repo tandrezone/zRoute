@@ -290,6 +290,20 @@ class RouterTest extends TestCase
         $this->assertNull(Router::dispatch($this->routeName('missing')));
     }
 
+    public function testDispatchByRouteNameWorksAcrossRouterInstances(): void
+    {
+        $anotherRouter = new Router();
+
+        $firstName  = $this->routeName('first');
+        $secondName = $this->routeName('second');
+
+        $this->router->get($firstName, '/first', static fn($p) => 'first');
+        $anotherRouter->get($secondName, '/second', static fn($p) => 'second');
+
+        $this->assertSame('first', Router::dispatch($firstName));
+        $this->assertSame('second', Router::dispatch($secondName));
+    }
+
     public function testRouteNameCannotBeEmpty(): void
     {
         $this->expectException(\InvalidArgumentException::class);
