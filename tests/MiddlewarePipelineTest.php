@@ -122,8 +122,12 @@ class MiddlewarePipelineTest extends TestCase
         $result   = $pipeline->run($this->makeRequest(), static fn($r) => 'destination');
 
         $this->assertSame('short-circuited', $result);
-        // first-before was reached, but first-after was never reached because
-        // the short-circuit returned before $next was called.
+        // mw1 is the OUTER layer; shortCircuit is the INNER layer.
+        // mw1 calls $next(), which invokes shortCircuit.  ShortCircuit returns
+        // 'short-circuited' without calling destination — but it still returns
+        // normally to mw1.  mw1 therefore receives the value from $next() and
+        // continues to execute its after-logic ('first-after').
+        // Only 'destination' is bypassed, not the outer middleware's tail.
         $this->assertSame(['first-before', 'first-after'], $log);
     }
 
