@@ -29,6 +29,9 @@ class Router
     /** @var Route[] */
     private array $routes = [];
 
+    /** @var array<string,Route> Routes keyed by their logical name. */
+    private array $namedRoutes = [];
+
     private mixed $notFoundHandler = null;
 
     private mixed $methodNotAllowedHandler = null;
@@ -79,8 +82,70 @@ class Router
      */
     public function addRoute(string $method, string $pattern, callable $handler): static
     {
-        $this->routes[] = new Route(strtoupper($method), $pattern, $handler);
+        $route = new Route(strtoupper($method), $pattern, $handler);
+        $this->routes[] = $route;
 
+        return $this;
+    }
+
+    /**
+     * Register a route from a fully-specified definition array and return the
+     * created Route object so callers can set a name or other metadata.
+     *
+     * @internal Used by RouteLoader; prefer loadFromArray() for public use.
+     *
+     * @param array<string,string> $paramRegexMap  Per-param custom regex constraints.
+     */
+    public function registerRoute(
+        string $method,
+        string $pattern,
+        callable $handler,
+        array $paramRegexMap = [],
+        string $name = '',
+    ): Route {
+        $route = new Route(strtoupper($method), $pattern, $handler, $paramRegexMap);
+
+        if ($name !== '') {
+            $route->setName($name);
+            $this->namedRoutes[$name] = $route;
+        }
+
+        $this->routes[] = $route;
+
+        return $route;
+    }
+
+    // -----------------------------------------------------------------------
+    // Array-based route loading
+    // -----------------------------------------------------------------------
+
+    /**
+     * Load route definitions from a PHP array.
+     *
+     * Each element of $definitions must be an associative array matching the
+     * generic route definition format (see RouteLoader for the full schema).
+     *
+     * An optional $config array is passed to RouteLoader so that paths using
+     * the config[namespace.key] syntax can be resolved at load time.
+     *
+     * @param array<int,array<string,mixed>> $definitions Route definition array.
+     * @param array<string,mixed>            $config      Host-application config values.
+     */
+    public function loadFromArray(array $definitions, array $config = []): static
+    {
+        (new RouteLoader())->loadInto($this, $definitions, $config);
+        return $this;
+    }
+
+    /**
+     * Load route definitions from a PHP file that returns an array.
+     *
+     * @param string              $filePath Absolute path to the route definitions file.
+     * @param array<string,mixed> $config   Host-application config values.
+     */
+    public function loadFromFile(string $filePath, array $config = []): static
+    {
+        (new RouteLoader())->loadFromFile($this, $filePath, $config);
         return $this;
     }
 
@@ -121,6 +186,16 @@ class Router
     public function getRoutes(): array
     {
         return $this->routes;
+    }
+
+    /**
+     * Look up a route by its logical name.
+     *
+     * Returns null when no route with that name has been registered.
+     */
+    public function getNamedRoute(string $name): ?Route
+    {
+        return $this->namedRoutes[$name] ?? null;
     }
 
     // -----------------------------------------------------------------------
