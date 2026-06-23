@@ -1,0 +1,25 @@
+Act as an expert PHP Software Architect. I need you to generate a structural, array-based routing configuration file for a PHP Composer package. 
+
+This file will be used to feed a custom routing engine, so it must follow a strict, predictable schema.
+
+### Core Rules & Schema
+Every route in the array must be an associative array containing these exact keys:
+1. 'name': A unique dot-notation string (e.g., 'package.context.action').
+2. 'method': The HTTP verb in uppercase ('GET', 'POST', 'PUT', 'DELETE').
+3. 'path': The URI pattern. 
+   - For dynamic segments, use brackets: `{id}`.
+   - For host-configured fallback or handoff routes, use the syntax: `config[config_file.key_name]`.
+4. 'callback': An array mapping to a fully qualified Controller class and its method: `[\Namespace\Controller::class, 'methodName']`.
+5. 'middleware': An array of fully qualified middleware class strings. Leave empty `[]` if none.
+6. 'parameters': An associative array defining validation rules for incoming data.
+   - For simple fields: `'field_name' => ['type' => 'datatype', 'required' => true/false]`
+   - For dynamic path params: Include `'source' => 'path'` and an optional `'regex'`.
+   - For nested arrays/payloads: Include `'type' => 'array'` and a `'structure'` subarray defining the nested elements.
+
+### Context for the New Project
+- Package Namespace: [Insert your namespace here, e.g., Acme\BlogManager]
+- Main Controllers to use: [Insert main controller names, e.g., PostController, CommentController]
+- Project Description: [Briefly describe what this specific route file is for, e.g., A package to manage blog posts, comments, and redirect back to the host app dashboard upon completion.]
+
+### Expected Output
+Return only the valid PHP file starting with `<?php`. Include clean DocBlock comments above each route array explaining the type of route (e.g., Entry Point, Resource, Handoff Point) and its intent. Do not write markdown explanations outside of the code block.
