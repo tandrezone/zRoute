@@ -38,11 +38,11 @@ use zRoute\Router;
 
 $router = new Router();
 
-// Static route
-$router->get('/', fn($p) => print "Home page\n");
+// Static route (name, pattern, handler)
+$router->get('home', '/', fn($p) => print "Home page\n");
 
 // Dynamic route — parameter syntax: $paramName
-$router->get('/products/$product-slug', function (array $params) {
+$router->get('products.show', '/products/$product-slug', function (array $params) {
     echo "Product: " . htmlspecialchars($params['product-slug']) . "\n";
 });
 
@@ -78,23 +78,28 @@ Dynamic segments match **one path segment only** (they never cross a `/`).
 ### Registering routes
 
 ```php
-$router->get(string $pattern, callable $handler): static
-$router->post(string $pattern, callable $handler): static
-$router->put(string $pattern, callable $handler): static
-$router->patch(string $pattern, callable $handler): static
-$router->delete(string $pattern, callable $handler): static
-$router->any(string $pattern, callable $handler): static          // all common methods
-$router->addRoute(string $method, string $pattern, callable $handler): static
+$router->get(string $name, string $pattern, callable $handler): static
+$router->post(string $name, string $pattern, callable $handler): static
+$router->put(string $name, string $pattern, callable $handler): static
+$router->patch(string $name, string $pattern, callable $handler): static
+$router->delete(string $name, string $pattern, callable $handler): static
+$router->any(string $name, string $pattern, callable $handler): static          // all common methods
+$router->addRoute(string $method, string $name, string $pattern, callable $handler): static
 ```
 
 Every method returns `$this` so calls can be chained:
 
 ```php
 $router
-    ->get('/', fn($p) => 'home')
-    ->get('/about', fn($p) => 'about')
-    ->post('/users', fn($p) => 'create user');
+    ->get('home', '/', fn($p) => 'home')
+    ->get('about', '/about', fn($p) => 'about')
+    ->post('users.create', '/users', fn($p) => 'create user');
 ```
+
+Route names must be non-empty and globally unique so they can be dispatched
+statically via `Router::dispatch()`.
+For `any('ping', ...)`, generated names are `ping.get`, `ping.post`, `ping.put`,
+`ping.patch`, and `ping.delete`.
 
 ### Error handlers
 
@@ -118,8 +123,11 @@ $router->methodNotAllowed(function (string $method, string $path): void {
 // Dispatch the real HTTP request (reads $_SERVER)
 $router->run(): mixed
 
-// Dispatch a request manually (useful in tests, CLI scripts)
-$router->dispatch(string $method, string $path): mixed
+// Dispatch the HTTP request manually by method + path
+$router->dispatchRequest(string $method, string $path): mixed
+
+// Dispatch a route statically by route name + params
+Router::dispatch(string $name, array $params = []): mixed
 ```
 
 ---
