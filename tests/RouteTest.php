@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 use zRoute\Route;
 
 /**
- * Unit tests for the Route class.
+ * Unit tests for the Route class, covering both the legacy $param syntax
+ * and the new {param} curly-brace syntax introduced for array-based routes.
  */
 class RouteTest extends TestCase
 {
@@ -46,12 +47,29 @@ class RouteTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // Static route matching
+    // Name field
+    // -----------------------------------------------------------------------
+
+    public function testDefaultNameIsEmpty(): void
+    {
+        $route = new Route('GET', '/path', static fn($p) => null);
+        $this->assertSame('', $route->getName());
+    }
+
+    public function testSetNameReturnsSelf(): void
+    {
+        $route = new Route('GET', '/path', static fn($p) => null);
+        $this->assertSame($route, $route->setName('my.route'));
+        $this->assertSame('my.route', $route->getName());
+    }
+
+    // -----------------------------------------------------------------------
+    // Legacy $param static route matching
     // -----------------------------------------------------------------------
 
     public function testStaticRouteMatches(): void
     {
-        $route = new Route('GET', '/about', static fn($p) => null);
+        $route  = new Route('GET', '/about', static fn($p) => null);
         $params = $route->matches('GET', '/about');
 
         $this->assertIsArray($params);
@@ -71,7 +89,7 @@ class RouteTest extends TestCase
     }
 
     // -----------------------------------------------------------------------
-    // Dynamic route matching
+    // Legacy $param dynamic matching
     // -----------------------------------------------------------------------
 
     public function testSingleDynamicParam(): void
@@ -101,9 +119,69 @@ class RouteTest extends TestCase
     public function testDynamicSegmentDoesNotCrossSlash(): void
     {
         $route = new Route('GET', '/users/$id', static fn($p) => null);
-
-        // The dynamic segment must not consume path separators.
         $this->assertNull($route->matches('GET', '/users/7/extra'));
+    }
+
+    // -----------------------------------------------------------------------
+    // New {param} curly-brace syntax
+    // -----------------------------------------------------------------------
+
+    public function testCurlyBraceSyntaxExtractsParamName(): void
+    {
+        $route = new Route('GET', '/resources/{id}', static fn($p) => null);
+        $this->assertSame(['id'], $route->getParamNames());
+    }
+
+    public function testCurlyBraceSyntaxMatchesDynamicSegment(): void
+    {
+        $route  = new Route('GET', '/resources/{id}', static fn($p) => null);
+        $params = $route->matches('GET', '/resources/42');
+
+        $this->assertSame(['id' => '42'], $params);
+    }
+
+    public function testCurlyBraceMultipleParams(): void
+    {
+        $route  = new Route('GET', '/users/{userId}/posts/{postId}', static fn($p) => null);
+        $params = $route->matches('GET', '/users/7/posts/99');
+
+        $this->assertSame(['userId' => '7', 'postId' => '99'], $params);
+    }
+
+    public function testCurlyBraceDoesNotCrossSlash(): void
+    {
+        $route = new Route('GET', '/resources/{id}', static fn($p) => null);
+        $this->assertNull($route->matches('GET', '/resources/1/extra'));
+    }
+
+    // -----------------------------------------------------------------------
+    // Per-param regex constraints (curly-brace only)
+    // -----------------------------------------------------------------------
+
+    public function testCustomRegexAllowsMatchingValue(): void
+    {
+        $route  = new Route('GET', '/resources/{id}', static fn($p) => null, ['id' => '[0-9]+']);
+        $params = $route->matches('GET', '/resources/123');
+
+        $this->assertSame(['id' => '123'], $params);
+    }
+
+    public function testCustomRegexRejectsNonMatchingValue(): void
+    {
+        $route = new Route('GET', '/resources/{id}', static fn($p) => null, ['id' => '[0-9]+']);
+        $this->assertNull($route->matches('GET', '/resources/abc'));
+    }
+
+    // -----------------------------------------------------------------------
+    // Mixed syntax
+    // -----------------------------------------------------------------------
+
+    public function testMixedSyntaxInOnePattern(): void
+    {
+        $route  = new Route('GET', '/a/$x/b/{y}', static fn($p) => null);
+        $params = $route->matches('GET', '/a/hello/b/world');
+
+        $this->assertSame(['x' => 'hello', 'y' => 'world'], $params);
     }
 
     // -----------------------------------------------------------------------

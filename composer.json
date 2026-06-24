@@ -22,7 +22,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "zRoute\\Tests\\": "tests/"
+            "zRoute\\Tests\\": "tests/",
+            "zRoute\\Examples\\": "examples/"
         }
     }
 }
